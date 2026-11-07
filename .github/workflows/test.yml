@@ -1,0 +1,19 @@
+name: CLI installation
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  install:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Install exact tap checkout and test synthetic profiles
+        run: |
+          brew tap douyixuan/tap "$GITHUB_WORKSPACE"
+          brew install douyixuan/tap/istk
+          brew test douyixuan/tap/istk
+          istk version
