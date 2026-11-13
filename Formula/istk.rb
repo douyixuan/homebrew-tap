@@ -1,10 +1,10 @@
-# Verified source: 2b473c2fe2a898a661519efa2462a2fd9c7217f6; CI run: 42389530538
+# Verified source: 1d515e4c2909fbe57269d48317ef197f6cc69c1d; CI run: 43407900900
 class Istk < Formula
   desc "Command-line access to iStickies2 note profiles"
   homepage "https://github.com/douyixuan/stickies"
-  url "https://github.com/douyixuan/stickies/releases/download/cli-v1.0.0/istk-1.0.0-macos-arm64.zip"
-  version "1.0.0"
-  sha256 "fe6e37f7719b154552078ee1227fc9b1979ae32bd51b0544851268377e4fcbf2"
+  url "https://github.com/douyixuan/stickies/releases/download/cli-v1.0.1/istk-1.0.1-macos-arm64.zip"
+  version "1.0.1"
+  sha256 "bbc869794d82786a6723bc9a6b2b9517069063bea1b180725fe20ce90b067bbf"
 
   depends_on arch: :arm64
   depends_on macos: :sonoma

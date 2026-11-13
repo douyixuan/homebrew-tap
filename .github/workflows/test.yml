@@ -7,13 +7,42 @@ permissions:
 jobs:
   install:
     runs-on: macos-26
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+      HOMEBREW_NO_INSTALL_CLEANUP: 1
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      - name: Install exact tap checkout and test synthetic profiles
+          fetch-depth: 0
+      - name: Upgrade actual 1.0.0 installation with synthetic profile
         run: |
-          brew tap douyixuan/tap "$GITHUB_WORKSPACE"
+          set -euo pipefail
+          target=$(git rev-parse HEAD)
+          git worktree add "$RUNNER_TEMP/old-tap" 6f7dce5dfb95b65c37290bb33c5c0d80413850f6
+          brew tap douyixuan/tap "$RUNNER_TEMP/old-tap"
           brew install douyixuan/tap/istk
+          istk version | python3 -c 'import json,sys; assert json.load(sys.stdin)["version"] == "1.0.0"'
+          profile="$RUNNER_TEMP/upgrade profile"
+          istk --dir "$profile" add '升级验收 synthetic note' > "$RUNNER_TEMP/before.json"
+          cp "$profile/notes.json" "$RUNNER_TEMP/notes-before.json"
+          tap=$(brew --repo douyixuan/tap)
+          git -C "$tap" fetch "$GITHUB_WORKSPACE" "$target"
+          git -C "$tap" checkout --detach FETCH_HEAD
+          brew upgrade douyixuan/tap/istk
+          istk version | python3 -c 'import json,sys; assert json.load(sys.stdin)["version"] == "1.0.1"'
+          id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$RUNNER_TEMP/before.json")
+          istk --dir "$profile" get "$id" > "$RUNNER_TEMP/after.json"
+          cmp "$RUNNER_TEMP/before.json" "$RUNNER_TEMP/after.json"
+          cmp "$RUNNER_TEMP/notes-before.json" "$profile/notes.json"
+          istk --dir "$profile" add 'new after upgrade' >/dev/null
+          istk --dir "$profile" search 'after upgrade' | python3 -c 'import json,sys; assert len(json.load(sys.stdin)["notes"]) == 1'
+          mkdir "$RUNNER_TEMP/empty-dir-check"
+          cd "$RUNNER_TEMP/empty-dir-check"
+          set +e
+          istk --dir '' add 'must not save'
+          result=$?
+          set -e
+          test "$result" -eq 64
+          test -z "$(ls -A)"
           brew test douyixuan/tap/istk
-          istk version
